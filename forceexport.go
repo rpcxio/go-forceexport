@@ -56,7 +56,7 @@ func CreateFuncForCodePtr(outFuncPtr interface{}, codePtr uintptr) {
 // them below (and they need to stay in sync or else things will fail
 // catastrophically).
 func FindFuncWithName(name string) (uintptr, error) {
-	for moduleData := &Firstmoduledata; moduleData != nil; moduleData = moduleData.next {
+	for moduleData := &Firstmoduledata; moduleData != nil && moduleData.ftab != nil; moduleData = moduleData.next {
 		for _, ftab := range moduleData.ftab {
 			f := (*runtime.Func)(unsafe.Pointer(&moduleData.pclntable[ftab.funcoff]))
 			if f.Name() == name {
