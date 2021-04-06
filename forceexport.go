@@ -56,8 +56,11 @@ func CreateFuncForCodePtr(outFuncPtr interface{}, codePtr uintptr) {
 // them below (and they need to stay in sync or else things will fail
 // catastrophically).
 func FindFuncWithName(name string) (uintptr, error) {
-	for moduleData := &Firstmoduledata; moduleData != nil && moduleData.ftab != nil; moduleData = moduleData.next {
+	for moduleData := &Firstmoduledata; moduleData != nil; moduleData = moduleData.next {
 		for _, ftab := range moduleData.ftab {
+			if int(ftab.funcoff) >= len(moduleData.pclntable) {
+				continue
+			}
 			f := (*runtime.Func)(unsafe.Pointer(&moduleData.pclntable[ftab.funcoff]))
 			if f.Name() == name {
 				return f.Entry(), nil
@@ -72,39 +75,3 @@ func FindFuncWithName(name string) (uintptr, error) {
 
 //go:linkname Firstmoduledata runtime.firstmoduledata
 var Firstmoduledata Moduledata
-
-type Moduledata struct {
-	pclntable    []byte
-	ftab         []Functab
-	filetab      []uint32
-	findfunctab  uintptr
-	minpc, maxpc uintptr
-
-	text, etext           uintptr
-	noptrdata, enoptrdata uintptr
-	data, edata           uintptr
-	bss, ebss             uintptr
-	noptrbss, enoptrbss   uintptr
-	end, gcdata, gcbss    uintptr
-
-	// Original type was []*_type
-	typelinks []interface{}
-
-	modulename string
-	// Original type was []modulehash
-	modulehashes []interface{}
-
-	gcdatamask, gcbssmask Bitvector
-
-	next *Moduledata
-}
-
-type Functab struct {
-	entry   uintptr
-	funcoff uintptr
-}
-
-type Bitvector struct {
-	n        int32 // # of bits
-	bytedata *uint8
-}
